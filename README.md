@@ -32,6 +32,6 @@ it has all necessary information.
 We provide two model checkpoints: PaperCHIME (which was used to obtain the results detailed in the paper) and UltimateCHIME, which is a version of CHIME trained on all validation and
 testing datasets. 
 
-For reproducing the results in the paper, use CHIME. If you intend to use this model to generate melodic contours for personal use, we recommend CHIME-Ultimate, although CHIME 
+For reproducing the results in the paper, use CHIME. If you intend to use this model to generate melodic contours for personal use, we recommend UltimateCHIME, although CHIME 
 still achieves great performance
 
