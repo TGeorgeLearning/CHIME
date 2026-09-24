@@ -1,5 +1,11 @@
 # CHIME: A Constrained Harmonic Inductive Bias for Melody Extraction
 
+---
+
+To view the demo page for CHIME, which consists of synthesized melody predictions of CHIME and competing models, along with the ground truth audio, please visit https://tgeorgelearning.github.io/
+
+---
+
 CHIME is a **C**onstrained **H**armonic **I**nductive bias towards exploiting harmonic patterns for **M**elody **E**xtraction. CHIME consists of two modules designed for pitch and voicing, where the predicted pitch distribution is provided as an additional input to the voicing module to aid in voicing estimation.
 
 <p align='center'>
