@@ -8,7 +8,7 @@ CHIME is a **C**onstrained **H**armonic **I**nductive bias towards exploiting ha
 
 CHIME achieves state-of-the-art results across all test datasets, while also currently being the fastest melody extration method (up to 106.6x faster than previous state-of-the-art methods), indicating the value in researching melody extraction methods that focus on specific characteristics of music.
 <p align='center'>
-<img width="50%" alt="CHIMEPerformance" src="figures/CHIMEResults.png" />
+<img width="75%" alt="CHIMEPerformance" src="figures/CHIMEResults.png" />
 </p>
 
 ## Jupyter Notebook and Code
