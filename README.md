@@ -1,10 +1,15 @@
 # CHIME: A Constrained Harmonic Inductive Bias for Melody Extraction
 
 CHIME is a **C**onstrained **H**armonic **I**nductive bias towards exploiting harmonic patterns for **M**elody **E**xtraction. CHIME consists of two modules designed for pitch and voicing, where the predicted pitch distribution is provided as an additional input to the voicing module to aid in voicing estimation.
-<img width="1009" height="460" alt="CHIMEPerformance" src="https://github.com/user-attachments/assets/d51abe55-8383-4faf-a8c2-6257ce10bb51" />
+
+<p align='center'>
+<img width="50%" alt="CHIMEPerformance" src="figures/CHIMEDiagram.png" />
+</p>
 
 CHIME achieves state-of-the-art results across all test datasets, while also currently being the fastest melody extration method (up to 106.6x faster than previous state-of-the-art methods), indicating the value in researching melody extraction methods that focus on specific characteristics of music.
-
+<p align='center'>
+<img width="50%" alt="CHIMEPerformance" src="figures/CHIMEResults.png" />
+</p>
 
 ## Jupyter Notebook and Code
 
