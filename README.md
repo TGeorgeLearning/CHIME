@@ -17,7 +17,7 @@ CHIME achieves state-of-the-art results across all test datasets, while also cur
 <img width="75%" alt="CHIMEPerformance" src="figures/CHIMEResults.png" />
 </p>
 <p align='center'>
-<img width="75%" alt="CHIMEPerformance" src="figures/CHIMERTF.png" />
+<img width="60%" alt="CHIMEPerformance" src="figures/CHIMERTF.png" />
 </p>
 
 ## Jupyter Notebook and Code
