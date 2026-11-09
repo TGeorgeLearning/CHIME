@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import random
 
+
 class TrainLoader(Dataset):
 
     def __init__(self, x_files, y_files):
@@ -39,8 +40,6 @@ class TrainLoader(Dataset):
         y_sample = torch.from_numpy(y_sample.copy()).long()
 
         return x_sample, y_sample
-
-
 
 
 trainXFiles=[]

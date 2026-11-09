@@ -10,23 +10,21 @@ class CHIME(nn.Module):
         self.currEpoch=0
        
         self.pitchCNN = nn.Sequential(
-                                        nn.LazyConv2d(12,5,padding='same'),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
-            
-                                        nn.LazyConv2d(6,(53,3),padding='same'),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
-            
-                                        nn.LazyConv2d(4,(3,7),padding='same'),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
-            
-                                        nn.LazyConv2d(2,1))                            
+            nn.LazyConv2d(12,5,padding='same'),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
 
-        self.pitchLinear = nn.Sequential(
-                                    nn.ReLU(),nn.Dropout(0.15),
-                                        nn.LazyLinear(288))
+            nn.LazyConv2d(6,(53,3),padding='same'),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
+
+            nn.LazyConv2d(4,(3,7),padding='same'),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
+
+            nn.LazyConv2d(2,1))                            
+
+        self.pitchLinear = nn.Sequential(nn.ReLU(), nn.Dropout(0.15), nn.LazyLinear(288))
 
         self.pitchGRU = nn.Sequential(
             nn.ReLU(),nn.Dropout(0.1), nn.LazyLinear(288),
@@ -37,21 +35,20 @@ class CHIME(nn.Module):
             bidirectional=True)) 
   
         self.voiceCNN = nn.Sequential(
-                                        nn.LazyConv2d(12,5,padding=(0,2),stride=(2,1)),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
-            
-                                        nn.LazyConv2d(6,(53,3),padding=(0,1),stride=(3,1)),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
+            nn.LazyConv2d(12,5,padding=(0,2),stride=(2,1)),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
 
-                                        nn.LazyConv2d(6,(5,1),stride=(2,1)),
-                                        nn.LazyBatchNorm2d(),
-                                        nn.ReLU(),
-        
-                                        nn.AdaptiveMaxPool2d((8,86)))
+            nn.LazyConv2d(6,(53,3),padding=(0,1),stride=(3,1)),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
 
-        
+            nn.LazyConv2d(6,(5,1),stride=(2,1)),
+            nn.LazyBatchNorm2d(),
+            nn.ReLU(),
+
+            nn.AdaptiveMaxPool2d((8,86)))
+
         self.voiceLinear=nn.Sequential(nn.LazyLinear(16),nn.ReLU(),nn.Dropout(0.2),nn.LazyLinear(1))
 
         self.voiceGRU = nn.GRU(
@@ -60,9 +57,8 @@ class CHIME(nn.Module):
             bidirectional=True,
             batch_first=True,num_layers=3,dropout=0.05)
         
-            
-    def forward(self, x):
 
+    def forward(self, x):
         pitchX = self.pitchCNN(x)
         
         B = x.shape[0]
@@ -89,11 +85,8 @@ class CHIME(nn.Module):
 
         return [pitchPred,finalVoice]
 
-        
-
 
     def loss(self, predicted, targets, averaged=True):
-        
         voicePred = predicted[1]
         pitchPred = predicted[0]
 
@@ -123,7 +116,6 @@ class CHIME(nn.Module):
             finalLoss = 4*finalLoss + voiceLoss
 
         return finalLoss
-
             
 
     def trainStep(self,batch):    

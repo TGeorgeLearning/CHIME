@@ -49,6 +49,7 @@ def MDBPrecomputedData(songName):
 
         raise e
 
+
 def ADC2004(songName):
     try:
           print(songName)
@@ -84,6 +85,7 @@ def ADC2004(songName):
         traceback.print_exc()
 
         raise e
+
 
 def Mirex05(songName):
     try:

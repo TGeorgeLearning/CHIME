@@ -3,7 +3,6 @@ import os
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
 import numpy as np
 import librosa
 import pretty_midi
@@ -13,26 +12,26 @@ from scipy.interpolate import interp1d
 import pandas as pd
 
 
-
 def vectorFreqToBin(freqs):
-    bins = np.full(freqs.shape, -1, dtype=int)
+  bins = np.full(freqs.shape, -1, dtype=int)
 
-    mask = freqs > 0
+  mask = freqs > 0
 
-    bins[mask] = np.round(
-        48 * np.log2(freqs[mask] / librosa.note_to_hz('C2'))
-    ).astype(int)
+  bins[mask] = np.round(
+      48 * np.log2(freqs[mask] / librosa.note_to_hz('C2'))
+  ).astype(int)
 
-    bins[(bins < 0) | (bins >= 288)] = -1
+  bins[(bins < 0) | (bins >= 288)] = -1
 
-    return bins
+  return bins
+
 
 def semitone_to_hz(s):
-    s = np.asarray(s, dtype=float)
-    return 440.0 * (2.0 ** ((s - 69.0) / 12.0))
+  s = np.asarray(s, dtype=float)
+  return 440.0 * (2.0 ** ((s - 69.0) / 12.0))
 
-def mirCSV(csvPath,fftLength,sr): # to make the target is our goal as well
 
+def mirCSV(csvPath,fftLength,sr): 
   df=pd.read_csv(csvPath,header=None)
   frequencies = df[0].to_numpy(dtype=float)
 
@@ -41,63 +40,58 @@ def mirCSV(csvPath,fftLength,sr): # to make the target is our goal as well
 
   frame_times = np.arange(len(frequencies))*0.02
 
-
   hcqt_times = np.arange(fftLength) * 512 / sr
 
   interp_func = interp1d(frame_times, binfreqs, kind='nearest',fill_value=-1,bounds_error=False)
   binfreqs = interp_func(hcqt_times)
   return binfreqs.astype(np.int32)
 
+
 def MIR1kData(songName):
-          print(songName)
-          harmonics = [0.5, 1, 2, 3, 4, 5]
-          wavSong,sr = librosa.load(f'{MIR1kWavPath}{songName}.wav',sr=44100)
+  print(songName)
+  harmonics = [0.5, 1, 2, 3, 4, 5]
+  wavSong,sr = librosa.load(f'{MIR1kWavPath}{songName}.wav',sr=44100)
 
-          hcqt = []
+  hcqt = []
 
-          base_fmin = librosa.note_to_hz('C2')
+  base_fmin = librosa.note_to_hz('C2')
 
-          for h in harmonics:
-              cqt_h = librosa.cqt(
-                  wavSong,
-                  sr=sr,
-                  n_bins=288,
-                  bins_per_octave=48,
-                  fmin=h * base_fmin,
-                  hop_length=512
-              )
+  for h in harmonics:
+      cqt_h = librosa.cqt(
+          wavSong,
+          sr=sr,
+          n_bins=288,
+          bins_per_octave=48,
+          fmin=h * base_fmin,
+          hop_length=512
+      )
 
-              cqt_h=librosa.amplitude_to_db(np.abs(cqt_h),ref=np.max)
-              cqt_h = np.maximum(cqt_h, -80.0)
-              cqt_h = (cqt_h + 80) / 80
-              hcqt.append(cqt_h)
+      cqt_h=librosa.amplitude_to_db(np.abs(cqt_h),ref=np.max)
+      cqt_h = np.maximum(cqt_h, -80.0)
+      cqt_h = (cqt_h + 80) / 80
+      hcqt.append(cqt_h)
 
-          min_frames = min(h.shape[-1] for h in hcqt)
-          hcqt = [h[:, :min_frames] for h in hcqt]
-          hcqt = np.stack(hcqt, axis=0)
+  min_frames = min(h.shape[-1] for h in hcqt)
+  hcqt = [h[:, :min_frames] for h in hcqt]
+  hcqt = np.stack(hcqt, axis=0)
 
-          targetData = mirCSV(f'{MIR1kGTLabel}{songName}.pv',(hcqt.shape[2]),sr)
+  targetData = mirCSV(f'{MIR1kGTLabel}{songName}.pv',(hcqt.shape[2]),sr)
 
-          wholeData=[]
-          wholeTarget=[]
-          for i in range(0, hcqt.shape[2] - 172,12):
-
-              wholeData.append(hcqt[:,:,i:i+172])
-              wholeTarget.append(targetData[i:i+172])
-              
-          np.save(f"{trainXDataPath}{songName}.npy",wholeData)
-          np.save(f"{trainYDataPath}{songName}.npy",wholeTarget)
-
-
-
-
+  wholeData=[]
+  wholeTarget=[]
+  for i in range(0, hcqt.shape[2] - 172,12):
+    wholeData.append(hcqt[:,:,i:i+172])
+    wholeTarget.append(targetData[i:i+172])
+      
+  np.save(f"{trainXDataPath}{songName}.npy",wholeData)
+  np.save(f"{trainYDataPath}{songName}.npy",wholeTarget)
 
 
 def targetMDB(csvPath):
-    df = pd.read_csv(csvPath, sep=',', header=None)
-    frame_times = df[0].to_numpy(dtype=float)
-    frequencies = df[1].to_numpy(dtype=float)
-    return frame_times,frequencies
+  df = pd.read_csv(csvPath, sep=',', header=None)
+  frame_times = df[0].to_numpy(dtype=float)
+  frequencies = df[1].to_numpy(dtype=float)
+  return frame_times,frequencies
 
 
 def mdbCSV(csvPath,fftLength,sr,shift=0): 
@@ -113,6 +107,7 @@ def mdbCSV(csvPath,fftLength,sr,shift=0):
   binfreqs = interp_func(hcqt_times)
 
   return binfreqs.astype(np.int32)
+
 
 def MDBData(songName):
   try:
@@ -164,12 +159,6 @@ def MDBData(songName):
     print(e)
     raise
        
- 
-
-
-
-
-
     
 def midiToFreq(midiN):
    
@@ -209,8 +198,8 @@ def generateMidi(mscorePath,fftLength,sr,shift): # to make the target is our goa
         noteMidi=notesArray[index].pitch
     data[i]=numData
 
-
   return data
+
 
 def ORCHSETData(songName):
 

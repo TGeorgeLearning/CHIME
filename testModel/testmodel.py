@@ -7,32 +7,26 @@ model.load_state_dict(torch.load("")) # Replace this with the CHIME checkpoint y
 model.eval()
 
 def targetFreq(csvPath):
-   
     df = pd.read_csv(csvPath, sep=',', header=None)
-    
-    
-    
     frame_times = df[0].to_numpy(dtype=float)
     frequencies = df[1].to_numpy(dtype=float)
     return frame_times,frequencies
+
 
 def targetMirex(csvPath):
-   
-    df = pd.read_csv(csvPath, sep='\t', header=None)
-    
-    
-    
+    df = pd.read_csv(csvPath, sep='\t', header=None)   
     frame_times = df[0].to_numpy(dtype=float)
     frequencies = df[1].to_numpy(dtype=float)
     return frame_times,frequencies
 
+
 def targetADC(csvPath):
-    df = pd.read_csv(csvPath, sep=r"\s+",header=None)
- 
+    df = pd.read_csv(csvPath, sep=r"\s+",header=None) 
     frame_times = df[0].to_numpy(dtype=float)
     frequencies = df[1].to_numpy(dtype=float)
     return frame_times,frequencies
    
+
 MDBsongArr=[]
 MDBvoiceArr=[]
 MDBtimeArr=[]
@@ -126,193 +120,193 @@ adcMidi='/home/tristan/datasets/ADC2004/midi/'
 adcwavPath = '/home/tristan/datasets/ADC2004/wavFiles/'
 
 for song in MDBTestSongs:
-            print(song)
+    print(song)
 
-            hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
-            window = 86
-            hop = 43
-            
-            targetData, freq = targetFreq(f'{mdbMidi}{song}_MELODY2.csv')
-            MDBtargTimeArr.append(targetData)
-            MDBtargArr.append(freq)
-            
-            num_frames = hcqt.shape[2]
-            num_classes = 288
-            
-            pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
-            voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
-            counts = np.zeros(num_frames, dtype=np.float32)
-            
-            for i in range(0, num_frames - window + 1, hop):
-            
-                x = torch.from_numpy(
-                    hcqt[:, :, i:i+window]
-                ).unsqueeze(0).float().to(gpu())
-            
-                pitch_logits, voice_logits = model(x)
-            
-                pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            
-                voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-                pitch_sum_logits[i:i+window] += pitch_logits
-                voice_sum_logits[i:i+window] += voice_logits
-                counts[i:i+window] += 1
-            
-            last_start = num_frames - window
-            
-            x = torch.from_numpy(
-                hcqt[:, :, last_start:last_start+window]
-            ).unsqueeze(0).float().to(gpu())
-            
-            pitch_logits, voice_logits = model(x)
-            
-            pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-            pitch_sum_logits[last_start:last_start+window] += pitch_logits
-            voice_sum_logits[last_start:last_start+window] += voice_logits
-            counts[last_start:last_start+window] += 1
-            
-            avg_pitch_logits = pitch_sum_logits / counts[:, None]
-            avg_voice_logits = voice_sum_logits / counts
-            
-            predPitch = np.argmax(avg_pitch_logits, axis=1)
-            predictVal = base_fmin * (2.0 ** (predPitch / 48))
-            
-            probs = 1 / (1 + np.exp(-avg_voice_logits))
-
-            MDBvoiceArr.append(probs)
-            MDBsongArr.append(predictVal)
-      
-            
-            pitchTime = np.arange(num_frames) * (512 / 44100)
-            MDBtimeArr.append(pitchTime)
+    hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
+    window = 86
+    hop = 43
     
+    targetData, freq = targetFreq(f'{mdbMidi}{song}_MELODY2.csv')
+    MDBtargTimeArr.append(targetData)
+    MDBtargArr.append(freq)
+    
+    num_frames = hcqt.shape[2]
+    num_classes = 288
+    
+    pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
+    voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
+    counts = np.zeros(num_frames, dtype=np.float32)
+    
+    for i in range(0, num_frames - window + 1, hop):
+    
+        x = torch.from_numpy(
+            hcqt[:, :, i:i+window]
+        ).unsqueeze(0).float().to(gpu())
+    
+        pitch_logits, voice_logits = model(x)
+    
+        pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    
+        voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+        pitch_sum_logits[i:i+window] += pitch_logits
+        voice_sum_logits[i:i+window] += voice_logits
+        counts[i:i+window] += 1
+    
+    last_start = num_frames - window
+    
+    x = torch.from_numpy(
+        hcqt[:, :, last_start:last_start+window]
+    ).unsqueeze(0).float().to(gpu())
+    
+    pitch_logits, voice_logits = model(x)
+    
+    pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+    pitch_sum_logits[last_start:last_start+window] += pitch_logits
+    voice_sum_logits[last_start:last_start+window] += voice_logits
+    counts[last_start:last_start+window] += 1
+    
+    avg_pitch_logits = pitch_sum_logits / counts[:, None]
+    avg_voice_logits = voice_sum_logits / counts
+    
+    predPitch = np.argmax(avg_pitch_logits, axis=1)
+    predictVal = base_fmin * (2.0 ** (predPitch / 48))
+    
+    probs = 1 / (1 + np.exp(-avg_voice_logits))
+
+    MDBvoiceArr.append(probs)
+    MDBsongArr.append(predictVal)
+
+    
+    pitchTime = np.arange(num_frames) * (512 / 44100)
+    MDBtimeArr.append(pitchTime)
+
 
 for song in mirexTrain:
-            hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
+    hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
+
+    targetData,freq = targetMirex(f'{mirexMidi}{song}REF.txt')
+    MIREXtargTimeArr.append(targetData)
+    MIREXtargArr.append(freq)
     
-            targetData,freq = targetMirex(f'{mirexMidi}{song}REF.txt')
-            MIREXtargTimeArr.append(targetData)
-            MIREXtargArr.append(freq)
-            
-            num_frames = hcqt.shape[2]
-            num_classes = 288
-            
-            pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
-            voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
-            counts = np.zeros(num_frames, dtype=np.float32)
-            
-            for i in range(0, num_frames - window + 1, hop):
-            
-                x = torch.from_numpy(
-                    hcqt[:, :, i:i+window]
-                ).unsqueeze(0).float().to(gpu())
-            
-                pitch_logits, voice_logits = model(x)
-            
-                pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            
-                voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-                pitch_sum_logits[i:i+window] += pitch_logits
-                voice_sum_logits[i:i+window] += voice_logits
-                counts[i:i+window] += 1
-            
-            last_start = num_frames - window
-            
-            x = torch.from_numpy(
-                hcqt[:, :, last_start:last_start+window]
-            ).unsqueeze(0).float().to(gpu())
-            
-            pitch_logits, voice_logits = model(x)
-            
-            pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-            pitch_sum_logits[last_start:last_start+window] += pitch_logits
-            voice_sum_logits[last_start:last_start+window] += voice_logits
-            counts[last_start:last_start+window] += 1
-            
-            avg_pitch_logits = pitch_sum_logits / counts[:, None]
-            avg_voice_logits = voice_sum_logits / counts
-            
-            predPitch = np.argmax(avg_pitch_logits, axis=1)
-            predictVal = base_fmin * (2.0 ** (predPitch / 48))
-            
-            probs = 1 / (1 + np.exp(-avg_voice_logits))
+    num_frames = hcqt.shape[2]
+    num_classes = 288
+    
+    pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
+    voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
+    counts = np.zeros(num_frames, dtype=np.float32)
+    
+    for i in range(0, num_frames - window + 1, hop):
+    
+        x = torch.from_numpy(
+            hcqt[:, :, i:i+window]
+        ).unsqueeze(0).float().to(gpu())
+    
+        pitch_logits, voice_logits = model(x)
+    
+        pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    
+        voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+        pitch_sum_logits[i:i+window] += pitch_logits
+        voice_sum_logits[i:i+window] += voice_logits
+        counts[i:i+window] += 1
+    
+    last_start = num_frames - window
+    
+    x = torch.from_numpy(
+        hcqt[:, :, last_start:last_start+window]
+    ).unsqueeze(0).float().to(gpu())
+    
+    pitch_logits, voice_logits = model(x)
+    
+    pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+    pitch_sum_logits[last_start:last_start+window] += pitch_logits
+    voice_sum_logits[last_start:last_start+window] += voice_logits
+    counts[last_start:last_start+window] += 1
+    
+    avg_pitch_logits = pitch_sum_logits / counts[:, None]
+    avg_voice_logits = voice_sum_logits / counts
+    
+    predPitch = np.argmax(avg_pitch_logits, axis=1)
+    predictVal = base_fmin * (2.0 ** (predPitch / 48))
+    
+    probs = 1 / (1 + np.exp(-avg_voice_logits))
 
-            MIREXvoiceArr.append(probs)
-            MIREXsongArr.append(predictVal)
+    MIREXvoiceArr.append(probs)
+    MIREXsongArr.append(predictVal)
 
-            
-            pitchTime = np.arange(num_frames) * (512 / 44100)
-            MIREXtimeArr.append(pitchTime)
+    
+    pitchTime = np.arange(num_frames) * (512 / 44100)
+    MIREXtimeArr.append(pitchTime)
 
 
 
 for song in adcTrain:
-                    
-            hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
+            
+    hcqt = np.load(f'/mnt/SSD/processedData/compare16HopCQT/{song}.npy')
+
+
+    targetData,freq = targetADC(f'{adcMidi}{song}REF.txt')
+    ADCtargTimeArr.append(targetData)
+    ADCtargArr.append(freq)
     
+    num_frames = hcqt.shape[2]
+    num_classes = 288
+    
+    pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
+    voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
+    counts = np.zeros(num_frames, dtype=np.float32)
+    
+    for i in range(0, num_frames - window + 1, hop):
+    
+        x = torch.from_numpy(
+            hcqt[:, :, i:i+window]
+        ).unsqueeze(0).float().to(gpu())
+    
+        pitch_logits, voice_logits = model(x)
+    
+        pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    
+        voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+        pitch_sum_logits[i:i+window] += pitch_logits
+        voice_sum_logits[i:i+window] += voice_logits
+        counts[i:i+window] += 1
+    
+    last_start = num_frames - window
+    
+    x = torch.from_numpy(
+        hcqt[:, :, last_start:last_start+window]
+    ).unsqueeze(0).float().to(gpu())
+    
+    pitch_logits, voice_logits = model(x)
+    
+    pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
+    voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
+    
+    pitch_sum_logits[last_start:last_start+window] += pitch_logits
+    voice_sum_logits[last_start:last_start+window] += voice_logits
+    counts[last_start:last_start+window] += 1
+    
+    avg_pitch_logits = pitch_sum_logits / counts[:, None]
+    avg_voice_logits = voice_sum_logits / counts
+    
+    predPitch = np.argmax(avg_pitch_logits, axis=1)
+    predictVal = base_fmin * (2.0 ** (predPitch / 48))
+    
+    probs = 1 / (1 + np.exp(-avg_voice_logits))
 
-            targetData,freq = targetADC(f'{adcMidi}{song}REF.txt')
-            ADCtargTimeArr.append(targetData)
-            ADCtargArr.append(freq)
-            
-            num_frames = hcqt.shape[2]
-            num_classes = 288
-            
-            pitch_sum_logits = np.zeros((num_frames, num_classes), dtype=np.float32)
-            voice_sum_logits = np.zeros(num_frames, dtype=np.float32)
-            counts = np.zeros(num_frames, dtype=np.float32)
-            
-            for i in range(0, num_frames - window + 1, hop):
-            
-                x = torch.from_numpy(
-                    hcqt[:, :, i:i+window]
-                ).unsqueeze(0).float().to(gpu())
-            
-                pitch_logits, voice_logits = model(x)
-            
-                pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            
-                voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-                pitch_sum_logits[i:i+window] += pitch_logits
-                voice_sum_logits[i:i+window] += voice_logits
-                counts[i:i+window] += 1
-            
-            last_start = num_frames - window
-            
-            x = torch.from_numpy(
-                hcqt[:, :, last_start:last_start+window]
-            ).unsqueeze(0).float().to(gpu())
-            
-            pitch_logits, voice_logits = model(x)
-            
-            pitch_logits = pitch_logits.squeeze(0).detach().cpu().numpy()
-            voice_logits = voice_logits.squeeze(0).squeeze(-1).detach().cpu().numpy()
-            
-            pitch_sum_logits[last_start:last_start+window] += pitch_logits
-            voice_sum_logits[last_start:last_start+window] += voice_logits
-            counts[last_start:last_start+window] += 1
-            
-            avg_pitch_logits = pitch_sum_logits / counts[:, None]
-            avg_voice_logits = voice_sum_logits / counts
-            
-            predPitch = np.argmax(avg_pitch_logits, axis=1)
-            predictVal = base_fmin * (2.0 ** (predPitch / 48))
-            
-            probs = 1 / (1 + np.exp(-avg_voice_logits))
+    ADCvoiceArr.append(probs)
+    ADCsongArr.append(predictVal)
 
-            ADCvoiceArr.append(probs)
-            ADCsongArr.append(predictVal)
-      
-            
-            pitchTime = np.arange(num_frames) * (512 / 44100)
-            ADCtimeArr.append(pitchTime)
+    
+    pitchTime = np.arange(num_frames) * (512 / 44100)
+    ADCtimeArr.append(pitchTime)
 
 
 
