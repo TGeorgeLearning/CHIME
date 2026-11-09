@@ -5,7 +5,7 @@ def init_weights(m):
             torch.nn.init.zeros_(m.bias)
 
 
-model = Flower(lr=0.0005).to(gpu()) 
+model = CHIME(lr=0.0005).to(gpu()) 
 
 initializeLayers = torch.randn(1,6, 288, 172).to(gpu())
 _ = model(initializeLayers)

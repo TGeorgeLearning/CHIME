@@ -3,7 +3,7 @@
 import mir_eval
 bestoa=0
 
-model.load_state_dict(torch.load("")) # Replace this with the HarmoLite checkpoint you want to evaluate
+model.load_state_dict(torch.load("")) # Replace this with the CHIME checkpoint you want to evaluate
 model.eval()
 
 def targetFreq(csvPath):

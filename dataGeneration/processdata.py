@@ -80,10 +80,10 @@ def MIR1kData(songName):
 
           wholeData=[]
           wholeTarget=[]
-          for i in range(0, hcqt.shape[2] - 86,12):
+          for i in range(0, hcqt.shape[2] - 172,12):
 
-              wholeData.append(hcqt[:,:,i:i+86])
-              wholeTarget.append(targetData[i:i+86])
+              wholeData.append(hcqt[:,:,i:i+172])
+              wholeTarget.append(targetData[i:i+172])
               
           np.save(f"{trainXDataPath}{songName}.npy",wholeData)
           np.save(f"{trainYDataPath}{songName}.npy",wholeTarget)
@@ -153,9 +153,9 @@ def MDBData(songName):
 
             wholeData=[]
             wholeTarget=[]
-            for i in range(0, hcqt.shape[2] - 86,36):
-                wholeData.append(hcqt[:,:,i:i+86])
-                wholeTarget.append(targetData[i:i+86])
+            for i in range(0, hcqt.shape[2] - 172,36):
+                wholeData.append(hcqt[:,:,i:i+172])
+                wholeTarget.append(targetData[i:i+172])
               
             np.save(f"{trainXDataPath}{songName}{pitch}.npy",wholeData)
             np.save(f"{trainYDataPath}{songName}{pitch}.npy",wholeTarget)
@@ -257,10 +257,10 @@ def ORCHSETData(songName):
 
             wholeData=[]
             wholeTarget=[]
-            for i in range(0, hcqt.shape[2] - 86,24):
+            for i in range(0, hcqt.shape[2] - 172,24):
 
-              wholeData.append(hcqt[:,:,i:i+86])
-              wholeTarget.append(targetData[i:i+86])
+              wholeData.append(hcqt[:,:,i:i+172])
+              wholeTarget.append(targetData[i:i+172])
 
 
             np.save(f"{trainXDataPath}{songName}{pitch}.npy",wholeData)

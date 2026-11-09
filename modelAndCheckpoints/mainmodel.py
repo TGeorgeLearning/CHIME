@@ -9,7 +9,7 @@ class CHIME(nn.Module):
         self.lr=lr
         self.currEpoch=0
        
-        self.finalLayer = nn.Sequential(
+        self.pitchCNN = nn.Sequential(
                                         nn.LazyConv2d(12,5,padding='same'),
                                         nn.LazyBatchNorm2d(),
                                         nn.ReLU(),
@@ -22,27 +22,21 @@ class CHIME(nn.Module):
                                         nn.LazyBatchNorm2d(),
                                         nn.ReLU(),
             
-                                        nn.LazyConv2d(2,1))
-                                       
-                                            
-            
+                                        nn.LazyConv2d(2,1))                            
 
-        self.pitch = nn.Sequential(
+        self.pitchLinear = nn.Sequential(
                                     nn.ReLU(),nn.Dropout(0.15),
                                         nn.LazyLinear(288))
 
-        self.pitchgru = nn.Sequential(
+        self.pitchGRU = nn.Sequential(
             nn.ReLU(),nn.Dropout(0.1), nn.LazyLinear(288),
             nn.GRU(
             input_size=288,
             hidden_size=288,
             batch_first=True,
             bidirectional=True)) 
-
-
-
-        
-        self.analyze = nn.Sequential(
+  
+        self.voiceCNN = nn.Sequential(
                                         nn.LazyConv2d(12,5,padding=(0,2),stride=(2,1)),
                                         nn.LazyBatchNorm2d(),
                                         nn.ReLU(),
@@ -58,9 +52,9 @@ class CHIME(nn.Module):
                                         nn.AdaptiveMaxPool2d((8,86)))
 
         
-        self.final=nn.Sequential(nn.LazyLinear(16),nn.ReLU(),nn.Dropout(0.2),nn.LazyLinear(1))
+        self.voiceLinear=nn.Sequential(nn.LazyLinear(16),nn.ReLU(),nn.Dropout(0.2),nn.LazyLinear(1))
 
-        self.voicegru = nn.GRU(
+        self.voiceGRU = nn.GRU(
             input_size=48,
             hidden_size=36,
             bidirectional=True,
@@ -69,15 +63,15 @@ class CHIME(nn.Module):
             
     def forward(self, x):
 
-        pitchX = self.finalLayer(x)
+        pitchX = self.pitchCNN(x)
         
         B = x.shape[0]
 
-        pitchX=pitchX.flatten(1,2)
+        pitchX = pitchX.flatten(1,2)
         pitchX = pitchX.transpose(1, 2)
-        lstmX,_=self.plstm(pitchX)
+        pitchX,_ = self.pitchGRU(pitchX)
     
-        pitchPred=self.pitch(lstmX)
+        pitchPred = self.pitchLinear(pitchX)
         
         pitch_map = torch.softmax(pitchPred, dim=-1)
         pitch_map = pitch_map.permute(0, 2, 1)
@@ -85,13 +79,13 @@ class CHIME(nn.Module):
         
         combined = torch.cat([pitch_map, x], dim=1)    
 
-        voiceX = self.analyze(combined)
-        voiceX=voiceX.flatten(1,2)
+        voiceX = self.voiceCNN(combined)
+        voiceX = voiceX.flatten(1,2)
         voiceX = voiceX.permute(0,2,1)
 
-        finalVoice,_ = self.vlstm(voiceX)
+        finalVoice,_ = self.voiceGRU(voiceX)
         
-        finalVoice=self.final(finalVoice)
+        finalVoice=self.voiceLinear(finalVoice)
 
         return [pitchPred,finalVoice]
 
@@ -127,8 +121,6 @@ class CHIME(nn.Module):
             )
             
             finalLoss = 4*finalLoss + voiceLoss
-      
-            
 
         return finalLoss
 
@@ -139,7 +131,15 @@ class CHIME(nn.Module):
         l = self.loss(forwardRes,batch[-1])
         accuracy = self.valAccuracy(forwardRes,batch[-1])
         return l,accuracy  
-    
+
+
+    def targetFreq(csvPath):
+        df = pd.read_csv(csvPath, sep=',', header=None)
+        frame_times = df[0].to_numpy(dtype=float)
+        frequencies = df[1].to_numpy(dtype=float)
+        return frame_times,frequencies
+
+
     def computeValAccuracy(self):
         base_fmin = librosa.note_to_hz('C2') 
         MDBsongArr=[]
@@ -150,11 +150,11 @@ class CHIME(nn.Module):
         for song in MDBValSongs: # This is defined below
             print(song)
         
-            hcqt = np.load(f'{storeHCQTPath}{song}.npy') # The HCQTs should be precomputed for efficiency 
+            hcqt = np.load(f'{storeHCQTPath}{song}.npy') # The HCQTs should be precomputed for efficiency, you have to define where you stored them
             window = 172
             hop = 86
             
-            targetData, freq = targetFreq(f'{mdbMidi}{song}_MELODY2.csv')
+            targetData, freq = targetFreq(f'{mdbMidi}{song}_MELODY2.csv') # mdbMidi refers to the filepath of where the target data is stored. 
             MDBtargTimeArr.append(targetData)
             MDBtargArr.append(freq)
             
@@ -261,5 +261,5 @@ class CHIME(nn.Module):
       return torch.optim.Adam(self.parameters(),lr=self.lr) 
   
 from torchinfo import summary
-model = Flower(lr=0.001).to(gpu()) # Moved to GPU for summary to avoid device mismatch error
+model = CHIME(lr=0.001).to(gpu()) # Moved to GPU for summary to avoid device mismatch error
 summary(model,input_size=(1,6,288,172))
